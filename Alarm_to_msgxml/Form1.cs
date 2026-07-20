@@ -717,14 +717,8 @@ namespace Alarm_to_msgxml
                 .Replace("\r\n", "\n")
                 .Replace("\r", "\n");
 
-            string[] lines = normalized.Split('\n');
-
-            for (int i = 0; i < lines.Length; i++)
-            {
-                lines[i] = lines[i].Trim();
-            }
-
-            return string.Join("\\n", lines);
+            /* * "\n" 代表實際換行。 * "\\n" 代表反斜線加英文字母 n。 */
+            return normalized.Replace("\n", "\\n");
         }
 
         /// <summary>
