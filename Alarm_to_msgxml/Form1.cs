@@ -703,28 +703,28 @@ namespace Alarm_to_msgxml
         }
 
         /// <summary>
-        /// 將 Excel 的實際換行轉成 MSGXML 使用的字面 \n
+        /// 將 Excel 的實際換行轉成 MSGXML 使用的字面 \n，
+        /// 並清除每一行前後的多餘空白。
         /// </summary>
-        private string ConvertExcelLineBreaksToMsgXml(
-            string text)
+        private string ConvertExcelLineBreaksToMsgXml(string text)
         {
-            if (text == null)
+            if (string.IsNullOrEmpty(text))
             {
                 return "";
             }
 
-            // 統一所有換行格式
             string normalized = text
                 .Replace("\r\n", "\n")
                 .Replace("\r", "\n");
 
-            /*
-             * "\n" 代表實際換行。
-             * "\\n" 代表反斜線加英文字母 n。
-             */
-            return normalized.Replace(
-                "\n",
-                "\\n");
+            string[] lines = normalized.Split('\n');
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                lines[i] = lines[i].Trim();
+            }
+
+            return string.Join("\\n", lines);
         }
 
         /// <summary>
