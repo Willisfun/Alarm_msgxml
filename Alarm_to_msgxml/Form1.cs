@@ -536,8 +536,7 @@ namespace Alarm_to_msgxml
                 }
 
                 // Address 和要輸出的文字都空白時，不處理
-                if (string.IsNullOrWhiteSpace(address) &&
-                    string.IsNullOrWhiteSpace(sourceText))
+                if ((string.IsNullOrWhiteSpace(comment)) || (string.IsNullOrWhiteSpace(address) && string.IsNullOrWhiteSpace(sourceText)))
                 {
                     continue;
                 }
