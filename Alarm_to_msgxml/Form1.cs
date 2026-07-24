@@ -13,7 +13,10 @@ namespace Alarm_to_msgxml
 {
     public partial class Form1 : Form
     {
-        // 使用者選擇的 Excel 完整路徑
+        // PICTURE Screen XML 完整路徑
+        private string screenXmlPath = "";
+
+        // Alarm Excel 完整路徑
         private string excelPath = "";
 
         public Form1()
@@ -22,306 +25,295 @@ namespace Alarm_to_msgxml
         }
 
         /// <summary>
-        /// 選擇 Excel
+        /// 選擇 Alarm Excel。
         /// </summary>
         private void open_file(object sender, EventArgs e)
         {
             using (OpenFileDialog dialog = new OpenFileDialog())
             {
-                dialog.Title = "請選擇 Excel";
-                dialog.Filter =
-                    "Excel 檔案 (*.xlsx)|*.xlsx|所有檔案 (*.*)|*.*";
+                dialog.Title = "請選擇 Alarm Excel";
+                dialog.Filter = "Excel 檔案 (*.xlsx)|*.xlsx|所有檔案 (*.*)|*.*";
 
-                if (dialog.ShowDialog() == DialogResult.OK)
+                if (dialog.ShowDialog() != DialogResult.OK)
                 {
-                    excelPath = dialog.FileName;
-
-                    MessageBox.Show(
-                        "已選擇：\n" + excelPath,
-                        "完成",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    return;
                 }
+
+                excelPath = dialog.FileName;
             }
         }
 
         /// <summary>
-        /// 執行 Excel → Comment MSGXML + Symbol MSGXML
+        /// 選擇 PICTURE Screen XML。
         /// </summary>
-        private void execute(object sender, EventArgs e)
+        private void open_xml(object sender, EventArgs e)
         {
-            // 檢查 Excel 是否已選擇
-            if (string.IsNullOrWhiteSpace(excelPath))
+            using (OpenFileDialog dialog = new OpenFileDialog())
             {
-                MessageBox.Show(
-                    "請先選擇 Excel！",
-                    "提示",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-
-                return;
-            }
-
-            // 檢查 Excel 是否存在
-            if (!File.Exists(excelPath))
-            {
-                MessageBox.Show(
-                    "找不到選擇的 Excel：\n" + excelPath,
-                    "錯誤",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-
-                return;
-            }
-
-            // 檢查輸出檔名
-            if (string.IsNullOrWhiteSpace(file_name.Text))
-            {
-                MessageBox.Show(
-                    "請輸入輸出檔名！",
-                    "提示",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-
-                return;
-            }
-
-            string baseFileName = file_name.Text.Trim();
-
-            // 若使用者誤輸入 .msgxml，先移除副檔名
-            if (baseFileName.EndsWith(
-                    ".msgxml",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                baseFileName = baseFileName.Substring(
-                    0,
-                    baseFileName.Length - ".msgxml".Length);
-            }
-
-            // 檢查移除副檔名後是否為空
-            if (string.IsNullOrWhiteSpace(baseFileName))
-            {
-                MessageBox.Show(
-                    "請輸入有效的輸出檔名！",
-                    "提示",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-
-                return;
-            }
-
-            // 避免輸入不能作為檔名的字元
-            if (baseFileName.IndexOfAny(
-                    Path.GetInvalidFileNameChars()) >= 0)
-            {
-                MessageBox.Show(
-                    "輸出檔名包含無效字元：\n" +
-                    string.Join(
-                        " ",
-                        Path.GetInvalidFileNameChars()),
-                    "檔名錯誤",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-
-                return;
-            }
-
-            /*
-             * 範本路徑
-             *
-             * comment_example.msgxml
-             * symbol_example.msgxml
-             *
-             * 都必須放在 exe 旁邊
-             */
-            string commentTemplatePath = Path.Combine(
-                Application.StartupPath,
-                "comment_example.msgxml");
-
-            string symbolTemplatePath = Path.Combine(
-                Application.StartupPath,
-                "symbol_example.msgxml");
-
-            // 檢查 Comment 範本
-            if (!File.Exists(commentTemplatePath))
-            {
-                MessageBox.Show(
-                    "找不到 Comment MSGXML 範本：\n\n" +
-                    commentTemplatePath +
-                    "\n\n請將 comment_example.msgxml " +
-                    "放在程式執行檔旁邊。",
-                    "缺少範本",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-
-                return;
-            }
-
-            // 檢查 Symbol 範本
-            if (!File.Exists(symbolTemplatePath))
-            {
-                MessageBox.Show(
-                    "找不到 Symbol MSGXML 範本：\n\n" +
-                    symbolTemplatePath +
-                    "\n\n請將 symbol_example.msgxml " +
-                    "放在程式執行檔旁邊。",
-                    "缺少範本",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-
-                return;
-            }
-
-            /*
-             * 輸出檔名：
-             *
-             * 使用者輸入：
-             * KRV_ALARM_
-             *
-             * 輸出：
-             * KRV_ALARM_comment.msgxml
-             * KRV_ALARM_symbol.msgxml
-             */
-            string commentOutputName =
-                baseFileName + "_comment.msgxml";
-
-            string symbolOutputName =
-                baseFileName + "_symbol.msgxml";
-
-            // 輸出到 exe 同一個資料夾
-            string commentOutputPath = Path.Combine(
-                Application.StartupPath,
-                commentOutputName);
-
-            string symbolOutputPath = Path.Combine(
-                Application.StartupPath,
-                symbolOutputName);
-
-            // 避免 Comment 範本和輸出是同一個檔案
-            if (IsSamePath(
-                    commentTemplatePath,
-                    commentOutputPath))
-            {
-                MessageBox.Show(
-                    "Comment 輸出檔名不能和範本相同。\n\n" +
-                    "請輸入其他檔名。",
-                    "檔名重複",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-
-                return;
-            }
-
-            // 避免 Symbol 範本和輸出是同一個檔案
-            if (IsSamePath(
-                    symbolTemplatePath,
-                    symbolOutputPath))
-            {
-                MessageBox.Show(
-                    "Symbol 輸出檔名不能和範本相同。\n\n" +
-                    "請輸入其他檔名。",
-                    "檔名重複",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-
-                return;
-            }
-
-            // 檢查輸出檔案是否已存在
-            List<string> existingFiles = new List<string>();
-
-            if (File.Exists(commentOutputPath))
-            {
-                existingFiles.Add(commentOutputPath);
-            }
-
-            if (File.Exists(symbolOutputPath))
-            {
-                existingFiles.Add(symbolOutputPath);
-            }
-
-            // 只詢問一次是否覆蓋
-            if (existingFiles.Count > 0)
-            {
-                string existingFileText =
-                    string.Join("\n\n", existingFiles);
-
-                DialogResult answer = MessageBox.Show(
-                    "以下輸出檔案已存在：\n\n" +
-                    existingFileText +
-                    "\n\n是否覆蓋？",
-                    "確認覆蓋",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
-
-                if (answer != DialogResult.Yes)
+                dialog.Title = "請選擇 PICTURE Screen XML";
+                dialog.Filter = "XML 檔案 (*.xml)|*.xml|所有檔案 (*.*)|*.*";
+                dialog.InitialDirectory =@"D:\Fanuc_Picture_project\PICTURE_ORIGIN_V1.0.0.0\KAFO_PICTURE_IHMI";
+                if (dialog.ShowDialog() != DialogResult.OK)
                 {
                     return;
                 }
+                screenXmlPath = dialog.FileName;
             }
+        }
 
+        /// <summary>
+        /// 一鍵完成：
+        /// 1. 驗證輸入
+        /// 2. 找到 Screen XML 同層的 VtsData
+        /// 3. Excel 轉 Symbol / Comment MSGXML
+        /// 4. 修改 Screen XML 內的 MSGXML 路徑
+        /// </summary>
+        private void execute(object sender, EventArgs e)
+        {
             try
             {
-                /*
-                 * 產生 Comment MSGXML
-                 *
-                 * 使用 Excel 第 3 欄 Comment
-                 */
-                ConversionResult commentResult =
-                    ConvertExcelToMsgXml(
-                        excelPath,
-                        commentTemplatePath,
-                        commentOutputPath,
-                        MessageSource.Comment);
+                ValidateInputs();
 
-                /*
-                 * 產生 Symbol MSGXML
-                 *
-                 * 使用 Excel 第 2 欄 Symbol
-                 */
-                ConversionResult symbolResult =
-                    ConvertExcelToMsgXml(
-                        excelPath,
-                        symbolTemplatePath,
-                        symbolOutputPath,
-                        MessageSource.Symbol);
+                string baseFileName = NormalizeBaseFileName(file_name.Text);
+                string vtsDataFolder = GetVtsDataFolder(screenXmlPath);
+
+                Directory.CreateDirectory(vtsDataFolder);
+
+                string commentTemplatePath = Path.Combine(
+                    Application.StartupPath,
+                    "comment_example.msgxml");
+
+                string symbolTemplatePath = Path.Combine(
+                    Application.StartupPath,
+                    "symbol_example.msgxml");
+
+                ValidateTemplate(commentTemplatePath, "Comment");
+                ValidateTemplate(symbolTemplatePath, "Symbol");
+
+                string commentOutputName = baseFileName + "_comment.msgxml";
+                string symbolOutputName = baseFileName + "_symbol.msgxml";
+
+                string commentOutputPath = Path.Combine(
+                    vtsDataFolder,
+                    commentOutputName);
+
+                string symbolOutputPath = Path.Combine(
+                    vtsDataFolder,
+                    symbolOutputName);
+
+                ConfirmOverwriteIfNeeded(
+                    commentOutputPath,
+                    symbolOutputPath);
+
+                // 先產生檔案；兩個都成功後才修改 Screen XML。
+                ConversionResult commentResult = ConvertExcelToMsgXml(
+                    excelPath,
+                    commentTemplatePath,
+                    commentOutputPath,
+                    MessageSource.Comment);
+
+                ConversionResult symbolResult = ConvertExcelToMsgXml(
+                    excelPath,
+                    symbolTemplatePath,
+                    symbolOutputPath,
+                    MessageSource.Symbol);
+
+                PictureUpdateResult pictureResult = UpdatePictureXml(
+                    screenXmlPath,
+                    symbolOutputName,
+                    commentOutputName);
 
                 MessageBox.Show(
-                    "轉換完成！\n\n" +
-
-                    "【Comment】\n" +
-                    "繁體中文：" +
-                    commentResult.ChineseCount + " 筆\n" +
-                    "英文：" +
-                    commentResult.EnglishCount + " 筆\n" +
-                    "簡體中文：" +
-                    commentResult.SimplifiedChineseCount +
-                    " 筆\n\n" +
-
-                    "【Symbol】\n" +
-                    "英文：" +
-                    symbolResult.EnglishCount + " 筆\n" +
-                    " 筆\n\n" +
-                    "輸出位置：\n\n" +
-                    commentOutputPath + "\n\n" +
-                    symbolOutputPath,
-                    "轉換成功",
+                    "Alarm 建置完成！" +
+                    "【PICTURE Screen XML】" +
+                    "SYMBOL 路徑：修改 " + pictureResult.SymbolCount + " 個" +
+                    "COMMENT 路徑：修改 " + pictureResult.CommentCount + " 個" +
+                    "【Comment】" +
+                    "繁體中文：" + commentResult.ChineseCount + " 筆" +
+                    "英文：" + commentResult.EnglishCount + " 筆" +
+                    "簡體中文：" + commentResult.SimplifiedChineseCount + " 筆" +
+                    "【Symbol】" +
+                    "英文：" + symbolResult.EnglishCount + " 筆" +
+                    "【輸出資料夾】" +
+                    vtsDataFolder,
+                    "完成",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
+            }
+            catch (OperationCanceledException)
+            {
+                // 使用者取消覆蓋，不顯示錯誤。
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "轉換失敗：\n\n" + ex.Message,
+                    "建置失敗：" + ex.Message,
                     "錯誤",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
         }
 
+        private void ValidateInputs()
+        {
+            if (string.IsNullOrWhiteSpace(screenXmlPath))
+            {
+                throw new InvalidOperationException("請先選擇 PICTURE Screen XML。");
+            }
+
+            if (!File.Exists(screenXmlPath))
+            {
+                throw new FileNotFoundException(
+                    "找不到 PICTURE Screen XML。",
+                    screenXmlPath);
+            }
+
+            if (string.IsNullOrWhiteSpace(excelPath))
+            {
+                throw new InvalidOperationException("請先選擇 Alarm Excel。");
+            }
+
+            if (!File.Exists(excelPath))
+            {
+                throw new FileNotFoundException(
+                    "找不到 Alarm Excel。",
+                    excelPath);
+            }
+        }
+
+        private string NormalizeBaseFileName(string input)
+        {
+            string baseFileName = (input ?? "").Trim();
+
+            if (baseFileName.EndsWith(
+                    ".msgxml",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                baseFileName = Path.GetFileNameWithoutExtension(baseFileName);
+            }
+
+            if (string.IsNullOrWhiteSpace(baseFileName))
+            {
+                throw new InvalidOperationException("請輸入有效的輸出檔名。");
+            }
+
+            if (baseFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                throw new InvalidOperationException(
+                    "輸出檔名包含 Windows 不允許的字元。");
+            }
+
+            return baseFileName;
+        }
+
         /// <summary>
-        /// 執行完整轉換
+        /// Alarm XML 與 VtsData 資料夾位於同一層。
+        /// 例如：Project\Alarm.xml -> Project\VtsData
         /// </summary>
+        private string GetVtsDataFolder(string xmlPath)
+        {
+            string xmlFolder = Path.GetDirectoryName(xmlPath);
+
+            if (string.IsNullOrWhiteSpace(xmlFolder))
+            {
+                throw new InvalidOperationException(
+                    "無法取得 Alarm XML 所在資料夾。");
+            }
+
+            return Path.Combine(xmlFolder, "VtsData");
+        }
+
+        private void ValidateTemplate(string templatePath, string templateName)
+        {
+            if (!File.Exists(templatePath))
+            {
+                throw new FileNotFoundException(
+                    "找不到 " + templateName + " MSGXML 範本。" +
+                    "請將範本放在程式執行檔旁邊。",
+                    templatePath);
+            }
+        }
+
+        private void ConfirmOverwriteIfNeeded(params string[] outputPaths)
+        {
+            List<string> existingFiles = outputPaths
+                .Where(File.Exists)
+                .ToList();
+
+            if (existingFiles.Count == 0)
+            {
+                return;
+            }
+
+            DialogResult answer = MessageBox.Show(
+                "以下檔案已存在：" +
+                string.Join("", existingFiles) +"是否覆蓋？",
+                "確認覆蓋",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (answer != DialogResult.Yes)
+            {
+                throw new OperationCanceledException();
+            }
+        }
+
+        private PictureUpdateResult UpdatePictureXml(
+            string xmlPath,
+            string symbolFileName,
+            string commentFileName)
+        {
+            XDocument document = XDocument.Load(
+                xmlPath,
+                System.Xml.Linq.LoadOptions.PreserveWhitespace);
+
+            string newSymbolPath = @"VtsData\" + symbolFileName;
+            string newCommentPath = @"VtsData\" + commentFileName;
+
+            List<XElement> symbolTargets = document
+                .Descendants()
+                .Where(element =>
+                    element.Name.LocalName == "VTS" &&
+                    element.Value.IndexOf(
+                        "symbol.msgxml",
+                        StringComparison.OrdinalIgnoreCase) >= 0)
+                .ToList();
+
+            List<XElement> commentTargets = document
+                .Descendants()
+                .Where(element =>
+                    (element.Name.LocalName == "FileName" ||
+                     element.Name.LocalName == "VTS") &&
+                    element.Value.IndexOf(
+                        "comment.msgxml",
+                        StringComparison.OrdinalIgnoreCase) >= 0)
+                .ToList();
+
+            if (symbolTargets.Count == 0 && commentTargets.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "PICTURE Screen XML 中找不到 SYMBOL 或 COMMENT 的 MSGXML 引用。");
+            }
+
+            foreach (XElement element in symbolTargets)
+            {
+                element.Value = newSymbolPath;
+            }
+
+            foreach (XElement element in commentTargets)
+            {
+                element.Value = newCommentPath;
+            }
+
+            document.Save(xmlPath, System.Xml.Linq.SaveOptions.DisableFormatting);
+
+            return new PictureUpdateResult
+            {
+                SymbolCount = symbolTargets.Count,
+                CommentCount = commentTargets.Count
+            };
+        }
+
         private ConversionResult ConvertExcelToMsgXml(
     string sourceExcelPath,
     string templateMsgXmlPath,
@@ -884,26 +876,25 @@ namespace Alarm_to_msgxml
                 Path.GetFullPath(secondPath),
                 StringComparison.OrdinalIgnoreCase);
         }
+
     }
 
-    /// <summary>
-    /// 決定 Message 使用 Excel 的哪一欄
-    /// </summary>
     public enum MessageSource
     {
         Comment,
         Symbol
     }
 
-    /// <summary>
-    /// 單一 MSGXML 的轉換結果
-    /// </summary>
     public class ConversionResult
     {
         public int ChineseCount { get; set; }
-
         public int EnglishCount { get; set; }
-
         public int SimplifiedChineseCount { get; set; }
+    }
+
+    public class PictureUpdateResult
+    {
+        public int SymbolCount { get; set; }
+        public int CommentCount { get; set; }
     }
 }
