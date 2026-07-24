@@ -76,9 +76,6 @@ namespace Alarm_to_msgxml
 
                 string baseFileName = NormalizeBaseFileName(file_name.Text);
                 string vtsDataFolder = GetVtsDataFolder(screenXmlPath);
-
-                Directory.CreateDirectory(vtsDataFolder);
-
                 string commentTemplatePath = Path.Combine(
                     Application.StartupPath,
                     "comment_example.msgxml");
