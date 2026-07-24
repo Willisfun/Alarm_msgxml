@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{98EE0B71-1C7D-4485-9FB3-1A88410679D8}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Alarm_to_msgxml</RootNamespace>
-    <AssemblyName>Alarm_to_msgxml</AssemblyName>
+    <RootNamespace>Alarm_Builder</RootNamespace>
+    <AssemblyName>Alarm_Builder</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
