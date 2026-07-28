@@ -876,12 +876,7 @@ namespace Alarm_to_msgxml
         private IXLWorksheet FindTraditionalChineseWorksheet(
             XLWorkbook workbook)
         {
-            IXLWorksheet worksheet = workbook.Worksheets
-                .FirstOrDefault(item =>
-                    string.Equals(
-                        item.Name.Trim(),
-                        "ALARM",
-                        StringComparison.OrdinalIgnoreCase));
+            IXLWorksheet worksheet = workbook.Worksheet("ALARM");
 
             if (worksheet == null)
             {
