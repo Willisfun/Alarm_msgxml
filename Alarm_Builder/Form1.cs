@@ -52,12 +52,44 @@ namespace Alarm_to_msgxml
             {
                 dialog.Title = "請選擇 PICTURE Screen XML";
                 dialog.Filter = "XML 檔案 (*.xml)|*.xml|所有檔案 (*.*)|*.*";
-                dialog.InitialDirectory = @"D:\Fanuc_Picture_project\PICTURE_ORIGIN_V1.0.0.0\KAFO_PICTURE_IHMI";
+                dialog.InitialDirectory =
+                    @"D:\Fanuc_Picture_project\PICTURE_ORIGIN_V1.0.0.0\KAFO_PICTURE_IHMI";
+
                 if (dialog.ShowDialog() != DialogResult.OK)
                 {
                     return;
                 }
-                screenXmlPath = dialog.FileName;
+
+                try
+                {
+                    screenXmlPath = dialog.FileName;
+
+                    List<string> pairedPaths =
+                        GetPairedScreenXmlPaths(screenXmlPath);
+
+                    MessageBox.Show(
+                        "已成功配對以下兩個 PICTURE 螢幕：\n\n" +
+                        "【螢幕 1】\n" +
+                        pairedPaths[0] +
+                        "\n\n" +
+                        "【螢幕 2】\n" +
+                        pairedPaths[1] +
+                        "\n\n執行時將同時更新這兩個螢幕。",
+                        "Screen XML 配對成功",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    screenXmlPath = "";
+
+                    MessageBox.Show(
+                        "Screen XML 配對失敗：\n\n" +
+                        ex.Message,
+                        "配對失敗",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
             }
         }
 
@@ -114,32 +146,65 @@ namespace Alarm_to_msgxml
                     symbolOutputPath,
                     MessageSource.Symbol);
 
-                PictureUpdateResult pictureResult =
-                    UpdatePictureXmlFiles(
-                        screenXmlPaths,
-                        symbolOutputName,
-                        commentOutputName);
+                List<PictureUpdateResult> pictureResults =
+                UpdatePictureXmlFiles(
+                    screenXmlPaths,
+                    symbolOutputName,
+                    commentOutputName);
+
+                PictureUpdateResult alarm1Result = pictureResults[0];
+                PictureUpdateResult alarm2Result = pictureResults[1];
+
+                int totalSymbolCount = alarm1Result.SymbolCount + alarm2Result.SymbolCount;
+
+                int totalCommentCount = alarm1Result.CommentCount + alarm2Result.CommentCount;
 
                 MessageBox.Show(
                     "Alarm 建置完成！\n\n" +
-                    "【已修改的 PICTURE Screen XML】\n" +
-                    string.Join(
-                        "\n",
-                        screenXmlPaths.Select(path =>
-                            "- " + Path.GetFileName(path))) +
-                    "\n\n" +
-                    "SYMBOL 路徑：共修改 " +
-                    pictureResult.SymbolCount + " 個\n" +
-                    "COMMENT 路徑：共修改 " +
-                    pictureResult.CommentCount + " 個\n\n" +
-                    "【Comment】\n" +
-                    "繁體中文：" + commentResult.ChineseCount + " 筆\n" +
-                    "英文：" + commentResult.EnglishCount + " 筆\n" +
-                    "簡體中文：" + commentResult.SimplifiedChineseCount + " 筆\n\n" +
-                    "【Symbol】\n" +
-                    "英文：" + symbolResult.EnglishCount + " 筆\n\n" +
+
+                    "【" + Path.GetFileName(screenXmlPaths[0]) + "】\n" +
+                    "SYMBOL：修改 " +
+                    alarm1Result.SymbolCount +
+                    " 個\n" +
+                    "COMMENT：修改 " +
+                    alarm1Result.CommentCount +
+                    " 個\n\n" +
+
+                    "【" + Path.GetFileName(screenXmlPaths[1]) + "】\n" +
+                    "SYMBOL：修改 " +
+                    alarm2Result.SymbolCount +
+                    " 個\n" +
+                    "COMMENT：修改 " +
+                    alarm2Result.CommentCount +
+                    " 個\n\n" +
+
+                    "【修改總計】\n" +
+                    "SYMBOL：共修改 " +
+                    totalSymbolCount +
+                    " 個\n" +
+                    "COMMENT：共修改 " +
+                    totalCommentCount +
+                    " 個\n\n" +
+
+                    "【Comment MSGXML】\n" +
+                    "繁體中文：" +
+                    commentResult.ChineseCount +
+                    " 筆\n" +
+                    "英文：" +
+                    commentResult.EnglishCount +
+                    " 筆\n" +
+                    "簡體中文：" +
+                    commentResult.SimplifiedChineseCount +
+                    " 筆\n\n" +
+
+                    "【Symbol MSGXML】\n" +
+                    "英文：" +
+                    symbolResult.EnglishCount +
+                    " 筆\n\n" +
+
                     "【輸出資料夾】\n" +
                     vtsDataFolder,
+
                     "完成",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -333,13 +398,13 @@ namespace Alarm_to_msgxml
         /// 對同一機型的 alarm_1 與 alarm_2
         /// 套用完全相同的 MSGXML 路徑修改。
         /// </summary>
-        private PictureUpdateResult UpdatePictureXmlFiles(
-            IEnumerable<string> xmlPaths,
-            string symbolFileName,
-            string commentFileName)
+        private List<PictureUpdateResult> UpdatePictureXmlFiles(
+     IEnumerable<string> xmlPaths,
+     string symbolFileName,
+     string commentFileName)
         {
-            PictureUpdateResult totalResult =
-                new PictureUpdateResult();
+            List<PictureUpdateResult> results =
+                new List<PictureUpdateResult>();
 
             foreach (string xmlPath in xmlPaths)
             {
@@ -349,14 +414,10 @@ namespace Alarm_to_msgxml
                         symbolFileName,
                         commentFileName);
 
-                totalResult.SymbolCount +=
-                    result.SymbolCount;
-
-                totalResult.CommentCount +=
-                    result.CommentCount;
+                results.Add(result);
             }
 
-            return totalResult;
+            return results;
         }
 
         private PictureUpdateResult UpdatePictureXml(
