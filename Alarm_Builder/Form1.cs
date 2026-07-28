@@ -455,8 +455,8 @@ namespace Alarm_to_msgxml
                             englishExcelSheet,
                             document,
                             "Sheet1",
-                            MessageSource.Symbol,
-                            false);
+                            MessageSource.Symbol
+                            );
                 }
                 else
                 {
@@ -477,24 +477,24 @@ namespace Alarm_to_msgxml
                             traditionalChineseExcelSheet,
                             document,
                             "Chinese",
-                            MessageSource.Comment,
-                            false);
+                            MessageSource.Comment
+                            );
 
                     result.EnglishCount =
                         UpdateLanguageSheet(
                             englishExcelSheet,
                             document,
-                            "EN",
-                            MessageSource.Comment,
-                            true);
+                            "English",
+                            MessageSource.Comment
+                             );
 
                     result.SimplifiedChineseCount =
                         UpdateLanguageSheet(
                             simplifiedChineseExcelSheet,
                             document,
                             "SimplifiedChinese",
-                            MessageSource.Comment,
-                            false);
+                            MessageSource.Comment
+                            );
                 }
 
                 SaveAsUtf16(document, outputMsgXmlPath);
@@ -509,8 +509,8 @@ namespace Alarm_to_msgxml
             IXLWorksheet excelSheet,
             XDocument document,
             string xmlSheetName,
-            MessageSource messageSource,
-            bool xmlSheetNameContains)
+            MessageSource messageSource
+            )
         {
             XElement xmlSheet = document
                 .Descendants()
@@ -521,15 +521,7 @@ namespace Alarm_to_msgxml
                         return false;
                     }
 
-                    string actualSheetName =
-                        GetAttributeValue(element, "name");
-
-                    if (xmlSheetNameContains)
-                    {
-                        return actualSheetName.IndexOf(
-                            xmlSheetName,
-                            StringComparison.OrdinalIgnoreCase) >= 0;
-                    }
+                    string actualSheetName = GetAttributeValue(element, "name");
 
                     return string.Equals(
                         actualSheetName,
