@@ -52,7 +52,7 @@ namespace Alarm_to_msgxml
             {
                 dialog.Title = "請選擇 PICTURE Screen XML";
                 dialog.Filter = "XML 檔案 (*.xml)|*.xml|所有檔案 (*.*)|*.*";
-                dialog.InitialDirectory =@"D:\Fanuc_Picture_project\PICTURE_ORIGIN_V1.0.0.0\KAFO_PICTURE_IHMI";
+                dialog.InitialDirectory = @"D:\Fanuc_Picture_project\PICTURE_ORIGIN_V1.0.0.0\KAFO_PICTURE_IHMI";
                 if (dialog.ShowDialog() != DialogResult.OK)
                 {
                     return;
@@ -75,14 +75,15 @@ namespace Alarm_to_msgxml
                 ValidateInputs();
 
                 string baseFileName = NormalizeBaseFileName(file_name.Text);
-                string vtsDataFolder = GetVtsDataFolder(screenXmlPath);
-                string commentTemplatePath = Path.Combine(
-                    Application.StartupPath,
-                    "comment_example.msgxml");
 
-                string symbolTemplatePath = Path.Combine(
-                    Application.StartupPath,
-                    "symbol_example.msgxml");
+                // 使用者只要選 alarm_1 或 alarm_2 任一檔案，
+                // 程式會自動找到同資料夾內的另一個配對檔案。
+                List<string> screenXmlPaths = GetPairedScreenXmlPaths(screenXmlPath);
+
+                string vtsDataFolder = GetVtsDataFolder(screenXmlPath);
+                string commentTemplatePath = Path.Combine(Application.StartupPath, "comment_example.msgxml");
+
+                string symbolTemplatePath = Path.Combine(Application.StartupPath,"symbol_example.msgxml");
 
                 ValidateTemplate(commentTemplatePath, "Comment");
                 ValidateTemplate(symbolTemplatePath, "Symbol");
@@ -115,23 +116,31 @@ namespace Alarm_to_msgxml
                     symbolOutputPath,
                     MessageSource.Symbol);
 
-                PictureUpdateResult pictureResult = UpdatePictureXml(
-                    screenXmlPath,
-                    symbolOutputName,
-                    commentOutputName);
+                PictureUpdateResult pictureResult =
+                    UpdatePictureXmlFiles(
+                        screenXmlPaths,
+                        symbolOutputName,
+                        commentOutputName);
 
                 MessageBox.Show(
-                    "Alarm 建置完成！" +
-                    "【PICTURE Screen XML】" +
-                    "SYMBOL 路徑：修改 " + pictureResult.SymbolCount + " 個" +
-                    "COMMENT 路徑：修改 " + pictureResult.CommentCount + " 個" +
-                    "【Comment】" +
-                    "繁體中文：" + commentResult.ChineseCount + " 筆" +
-                    "英文：" + commentResult.EnglishCount + " 筆" +
-                    "簡體中文：" + commentResult.SimplifiedChineseCount + " 筆" +
-                    "【Symbol】" +
-                    "英文：" + symbolResult.EnglishCount + " 筆" +
-                    "【輸出資料夾】" +
+                    "Alarm 建置完成！\n\n" +
+                    "【已修改的 PICTURE Screen XML】\n" +
+                    string.Join(
+                        "\n",
+                        screenXmlPaths.Select(path =>
+                            "- " + Path.GetFileName(path))) +
+                    "\n\n" +
+                    "SYMBOL 路徑：共修改 " +
+                    pictureResult.SymbolCount + " 個\n" +
+                    "COMMENT 路徑：共修改 " +
+                    pictureResult.CommentCount + " 個\n\n" +
+                    "【Comment】\n" +
+                    "繁體中文：" + commentResult.ChineseCount + " 筆\n" +
+                    "英文：" + commentResult.EnglishCount + " 筆\n" +
+                    "簡體中文：" + commentResult.SimplifiedChineseCount + " 筆\n\n" +
+                    "【Symbol】\n" +
+                    "英文：" + symbolResult.EnglishCount + " 筆\n\n" +
+                    "【輸出資料夾】\n" +
                     vtsDataFolder,
                     "完成",
                     MessageBoxButtons.OK,
@@ -244,7 +253,7 @@ namespace Alarm_to_msgxml
 
             DialogResult answer = MessageBox.Show(
                 "以下檔案已存在：" +
-                string.Join("", existingFiles) +"是否覆蓋？",
+                string.Join("", existingFiles) + "是否覆蓋？",
                 "確認覆蓋",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -253,6 +262,118 @@ namespace Alarm_to_msgxml
             {
                 throw new OperationCanceledException();
             }
+        }
+
+        /// <summary>
+        /// 根據使用者選到的 alarm_1 / alarm_2，
+        /// 找到同一機型的另一個 Screen XML。
+        ///
+        /// 例如：
+        /// RVN_alarm_1.xml -> RVN_alarm_2.xml
+        /// RVN_alarm_2.xml -> RVN_alarm_1.xml
+        /// </summary>
+        private List<string> GetPairedScreenXmlPaths(
+            string selectedXmlPath)
+        {
+            string selectedFullPath =
+                Path.GetFullPath(selectedXmlPath);
+
+            string folder =
+                Path.GetDirectoryName(selectedFullPath);
+
+            string fileName =
+                Path.GetFileName(selectedFullPath);
+
+            if (string.IsNullOrWhiteSpace(folder))
+            {
+                throw new InvalidOperationException(
+                    "無法取得 Screen XML 所在資料夾。");
+            }
+
+            string pairedFileName;
+
+            if (Regex.IsMatch(
+                    fileName,
+                    "alarm_1",
+                    RegexOptions.IgnoreCase))
+            {
+                pairedFileName = Regex.Replace(
+                    fileName,
+                    "alarm_1",
+                    "alarm_2",
+                    RegexOptions.IgnoreCase);
+            }
+            else if (Regex.IsMatch(
+                         fileName,
+                         "alarm_2",
+                         RegexOptions.IgnoreCase))
+            {
+                pairedFileName = Regex.Replace(
+                    fileName,
+                    "alarm_2",
+                    "alarm_1",
+                    RegexOptions.IgnoreCase);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "選擇的 Screen XML 檔名必須包含 alarm_1 或 alarm_2。\n\n" +
+                    "目前檔名：" +
+                    fileName);
+            }
+
+            string pairedXmlPath =
+                Path.Combine(folder, pairedFileName);
+
+            if (!File.Exists(pairedXmlPath))
+            {
+                throw new FileNotFoundException(
+                    "找不到配對的 Screen XML。\n\n" +
+                    "已選擇：\n" +
+                    selectedFullPath +
+                    "\n\n應存在：\n" +
+                    pairedXmlPath,
+                    pairedXmlPath);
+            }
+
+            // 固定依 alarm_1、alarm_2 排序，
+            // 讓畫面訊息與執行順序一致。
+            return new[]
+                {
+                    selectedFullPath,
+                    Path.GetFullPath(pairedXmlPath)
+                }
+                .OrderBy(path => Regex.IsMatch(Path.GetFileName(path),"alarm_1",RegexOptions.IgnoreCase)? 1 : 2).ToList();
+        }
+
+        /// <summary>
+        /// 對同一機型的 alarm_1 與 alarm_2
+        /// 套用完全相同的 MSGXML 路徑修改。
+        /// </summary>
+        private PictureUpdateResult UpdatePictureXmlFiles(
+            IEnumerable<string> xmlPaths,
+            string symbolFileName,
+            string commentFileName)
+        {
+            PictureUpdateResult totalResult =
+                new PictureUpdateResult();
+
+            foreach (string xmlPath in xmlPaths)
+            {
+                PictureUpdateResult result =
+                    UpdatePictureXml(
+                        xmlPath,
+                        symbolFileName,
+                        commentFileName);
+
+                totalResult.SymbolCount +=
+                    result.SymbolCount;
+
+                totalResult.CommentCount +=
+                    result.CommentCount;
+            }
+
+            return totalResult;
         }
 
         private PictureUpdateResult UpdatePictureXml(
@@ -319,13 +440,9 @@ namespace Alarm_to_msgxml
         {
             ConversionResult result = new ConversionResult();
 
-            using (XLWorkbook workbook =
-                   new XLWorkbook(sourceExcelPath))
+            using (XLWorkbook workbook = new XLWorkbook(sourceExcelPath))
             {
-                XDocument document = XDocument.Load(
-                    templateMsgXmlPath,
-                    System.Xml.Linq.LoadOptions.PreserveWhitespace);
-
+                XDocument document = XDocument.Load(templateMsgXmlPath, System.Xml.Linq.LoadOptions.PreserveWhitespace);
                 if (messageSource == MessageSource.Symbol)
                 {
                     /*
@@ -334,8 +451,7 @@ namespace Alarm_to_msgxml
                      * Excel：工作表名稱只要包含 EN
                      * XML：Sheet1
                      */
-                    IXLWorksheet englishExcelSheet =
-                        FindEnglishWorksheet(workbook);
+                    IXLWorksheet englishExcelSheet = FindEnglishWorksheet(workbook);
 
                     result.EnglishCount =
                         UpdateLanguageSheet(
