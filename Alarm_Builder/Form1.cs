@@ -240,9 +240,7 @@ namespace Alarm_to_msgxml
 
         private void ConfirmOverwriteIfNeeded(params string[] outputPaths)
         {
-            List<string> existingFiles = outputPaths
-                .Where(File.Exists)
-                .ToList();
+            List<string> existingFiles = outputPaths.Where(File.Exists).ToList();
 
             if (existingFiles.Count == 0)
             {
@@ -273,14 +271,11 @@ namespace Alarm_to_msgxml
         private List<string> GetPairedScreenXmlPaths(
             string selectedXmlPath)
         {
-            string selectedFullPath =
-                Path.GetFullPath(selectedXmlPath);
+            string selectedFullPath = Path.GetFullPath(selectedXmlPath);
 
-            string folder =
-                Path.GetDirectoryName(selectedFullPath);
+            string folder = Path.GetDirectoryName(selectedFullPath);
 
-            string fileName =
-                Path.GetFileName(selectedFullPath);
+            string fileName = Path.GetFileName(selectedFullPath);
 
             if (string.IsNullOrWhiteSpace(folder))
             {
@@ -290,10 +285,7 @@ namespace Alarm_to_msgxml
 
             string pairedFileName;
 
-            if (Regex.IsMatch(
-                    fileName,
-                    "alarm_1",
-                    RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(fileName, "alarm_1", RegexOptions.IgnoreCase))
             {
                 pairedFileName = Regex.Replace(
                     fileName,
@@ -301,10 +293,7 @@ namespace Alarm_to_msgxml
                     "ALARM_2",
                     RegexOptions.IgnoreCase);
             }
-            else if (Regex.IsMatch(
-                         fileName,
-                         "alarm_2",
-                         RegexOptions.IgnoreCase))
+            else if (Regex.IsMatch(fileName, "alarm_2", RegexOptions.IgnoreCase))
             {
                 pairedFileName = Regex.Replace(
                     fileName,
@@ -314,10 +303,7 @@ namespace Alarm_to_msgxml
             }
             else
             {
-                throw new InvalidOperationException(
-                    "選擇的 Screen XML 檔名必須包含 alarm_1 或 alarm_2。\n\n" +
-                    "目前檔名：" +
-                    fileName);
+                throw new InvalidOperationException("選擇的 Screen XML 檔名必須包含 alarm_1 或 alarm_2。\n\n" + "目前檔名：" + fileName);
             }
 
             string pairedXmlPath = Path.Combine(folder, pairedFileName);
