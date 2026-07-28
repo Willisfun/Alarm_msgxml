@@ -368,7 +368,7 @@ namespace Alarm_to_msgxml
             }
             else
             {
-                throw new InvalidOperationException("選擇的 Screen XML 檔名必須包含 alarm_1 或 alarm_2。\n\n" + "目前檔名：" + fileName);
+                throw new InvalidOperationException("選擇的 Screen XML 檔名必須包含 ALARM_1 或 ALARM_2。\n\n" + "目前檔名：" + fileName);
             }
 
             string pairedXmlPath = Path.Combine(folder, pairedFileName);
