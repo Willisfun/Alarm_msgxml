@@ -75,15 +75,13 @@ namespace Alarm_to_msgxml
                 ValidateInputs();
 
                 string baseFileName = NormalizeBaseFileName(file_name.Text);
-
                 // 使用者只要選 alarm_1 或 alarm_2 任一檔案，
                 // 程式會自動找到同資料夾內的另一個配對檔案。
                 List<string> screenXmlPaths = GetPairedScreenXmlPaths(screenXmlPath);
-
                 string vtsDataFolder = GetVtsDataFolder(screenXmlPath);
                 string commentTemplatePath = Path.Combine(Application.StartupPath, "comment_example.msgxml");
 
-                string symbolTemplatePath = Path.Combine(Application.StartupPath,"symbol_example.msgxml");
+                string symbolTemplatePath = Path.Combine(Application.StartupPath, "symbol_example.msgxml");
 
                 ValidateTemplate(commentTemplatePath, "Comment");
                 ValidateTemplate(symbolTemplatePath, "Symbol");
@@ -300,7 +298,7 @@ namespace Alarm_to_msgxml
                 pairedFileName = Regex.Replace(
                     fileName,
                     "alarm_1",
-                    "alarm_2",
+                    "ALARM_2",
                     RegexOptions.IgnoreCase);
             }
             else if (Regex.IsMatch(
@@ -311,7 +309,7 @@ namespace Alarm_to_msgxml
                 pairedFileName = Regex.Replace(
                     fileName,
                     "alarm_2",
-                    "alarm_1",
+                    "ALARM_1",
                     RegexOptions.IgnoreCase);
             }
             else
@@ -322,8 +320,7 @@ namespace Alarm_to_msgxml
                     fileName);
             }
 
-            string pairedXmlPath =
-                Path.Combine(folder, pairedFileName);
+            string pairedXmlPath = Path.Combine(folder, pairedFileName);
 
             if (!File.Exists(pairedXmlPath))
             {
