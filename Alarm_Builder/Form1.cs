@@ -52,8 +52,10 @@ namespace Alarm_to_msgxml
             {
                 dialog.Title = "請選擇 PICTURE Screen XML";
                 dialog.Filter = "XML 檔案 (*.xml)|*.xml|所有檔案 (*.*)|*.*";
-                dialog.InitialDirectory =
-                    @"D:\Fanuc_Picture_project\PICTURE_ORIGIN_V1.0.0.0\KAFO_PICTURE_IHMI";
+                if (Directory.Exists(@"D:\Fanuc_Picture_project\PICTURE_ORIGIN_V1.0.0.0\KAFO_PICTURE_IHMI"))
+                {
+                    dialog.InitialDirectory =@"D:\Fanuc_Picture_project\PICTURE_ORIGIN_V1.0.0.0\KAFO_PICTURE_IHMI";
+                }
 
                 if (dialog.ShowDialog() != DialogResult.OK)
                 {
@@ -842,10 +844,6 @@ namespace Alarm_to_msgxml
             return addressNumber * 8 + bitNumber;
         }
 
-        /// <summary>
-        /// 將 Excel 的實際換行轉成 MSGXML 使用的字面 \n，
-        /// 並清除每一行前後的多餘空白。
-        /// </summary>
         private string ConvertExcelLineBreaksToMsgXml(string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -857,7 +855,12 @@ namespace Alarm_to_msgxml
                 .Replace("\r\n", "\n")
                 .Replace("\r", "\n");
 
-            /* * "\n" 代表實際換行。 * "\\n" 代表反斜線加英文字母 n。 */
+            // 如果換行後下一行是空白開頭，代表只是排版，直接接起來
+            normalized = System.Text.RegularExpressions.Regex.Replace(
+                normalized,
+                @"\n\s+",
+                "");
+            // 剩下真正的換行才轉成 \n
             return normalized.Replace("\n", "\\n");
         }
 
