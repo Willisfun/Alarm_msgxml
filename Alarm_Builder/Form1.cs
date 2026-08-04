@@ -856,7 +856,7 @@ namespace Alarm_to_msgxml
                 .Replace("\r", "\n");
 
             // 如果換行後下一行是空白開頭，代表只是排版，直接接起來
-            normalized = System.Text.RegularExpressions.Regex.Replace(
+            normalized = Regex.Replace(
                 normalized,
                 @"\n\s+",
                 "");
