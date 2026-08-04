@@ -648,18 +648,10 @@ namespace Alarm_to_msgxml
              */
             for (int rowNumber = 4; rowNumber <= lastRowNumber; rowNumber++)
             {
-                string address = excelSheet
-                    .Cell(rowNumber, 1)
-                    .GetString()
-                    .Trim();
-
-                string symbol = excelSheet
-                    .Cell(rowNumber, 2)
-                    .GetString();
-
-                string comment = excelSheet
-                    .Cell(rowNumber, 3)
-                    .GetString();
+                string address = excelSheet.Cell(rowNumber, 1).GetString().Trim();
+                string symbol = excelSheet.Cell(rowNumber, 2).GetString();
+                string comment = excelSheet.Cell(rowNumber, 3).GetString();
+                bool keepFormat = !string.IsNullOrWhiteSpace(excelSheet.Cell(rowNumber, 5).GetString());
 
                 /*
                  * 根據輸出檔案種類決定要寫入的內容
@@ -765,12 +757,11 @@ namespace Alarm_to_msgxml
                 else
                 {
                     /*
-                     * Comment 保留原本處理方式：
-                     * 將 Excel 實際換行轉成字面 \n
-                     */
-                    convertedText =
-                        ConvertExcelLineBreaksToMsgXml(
-                            sourceText);
+                    * Comment 處理：
+                    * KeepFormat 空白：自動整理文字格式。
+                    * KeepFormat 有值：保留 Excel 原始格式。
+                    */
+                    convertedText = ConvertExcelLineBreaksToMsgXml(sourceText, keepFormat);
                 }
 
                 messageElement.Value = convertedText;
@@ -844,23 +835,21 @@ namespace Alarm_to_msgxml
             return addressNumber * 8 + bitNumber;
         }
 
-        private string ConvertExcelLineBreaksToMsgXml(string text)
+        private string ConvertExcelLineBreaksToMsgXml(string text, bool keepFormat)
         {
             if (string.IsNullOrEmpty(text))
             {
                 return "";
             }
 
-            string normalized = text
-                .Replace("\r\n", "\n")
-                .Replace("\r", "\n");
-
-            // 如果換行後下一行是空白開頭，代表只是排版，直接接起來
-            normalized = Regex.Replace(
-                normalized,
-                @"\n\s+",
-                "");
-            // 剩下真正的換行才轉成 \n
+            string normalized = text.Replace("\r\n", "\n").Replace("\r", "\n");
+            if (!keepFormat)
+            {
+                normalized = Regex.Replace(
+                    normalized,
+                    @"\n\s+",
+                    "");
+            }
             return normalized.Replace("\n", "\\n");
         }
 
